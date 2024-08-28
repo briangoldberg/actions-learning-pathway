@@ -1,69 +1,79 @@
 name: build-test-deploy
-
 on: push
-
 jobs: 
   build:
     runs-on: ubuntu-latest
-
     steps: 
-      - name: checkout repo
+      - name: Checkout repo
         uses: actions/checkout@v3
-      - name: use node.js
+      
+      - name: Use Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-      - run: npm install
-      - run: npm run build 
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Build the project
+        run: npm run build 
 
   test: 
     needs: build
-
     runs-on: ubuntu-latest
-
     steps: 
-      - name: checkout repo
+      - name: Checkout repo
         uses: actions/checkout@v3
-      - name: use node.js
+      
+      - name: Use Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-      - run: npm install
-      - run: npm test
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Run tests
+        run: npm test
 
   deploy:
     needs: test
-
+    runs-on: ubuntu-latest
     permissions:
       contents: write
-      pages: write     
-      id-token: write  
-
+      pages: write
+      id-token: write
+    
     environment:
       name: production
-      url: ${{ steps.deployment.outputs.page_url }}
-    
-    runs-on: ubuntu-latest
-    
+      url: ${{ steps.deploy.outputs.page_url }} # Correct the ID and output here if necessary
+
     steps:
-      - name: checkout repo
+      - name: Checkout repo
         uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: use node.js
+        
+      - name: Use Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-      - name: configure github pages
+       
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Configure GitHub Pages
         uses: actions/configure-pages@v3
         with:
           static_site_generator: next
-      - run: npm install
-      - run: npm run build    
-      - name: upload artifacts
+        
+      - name: Check if output directory exists
+        run: if [ ! -d "./out" ]; then echo "Output directory does not exist"; exit 1; fi
+
+      - name: Upload artifacts
         uses: actions/upload-pages-artifact@v1
-        with: 
-          path: './out'
-      - name: deploy
-        id: deployment
+        with:
+          path: "./out"
+        
+      - name: Deploy
+        id: deploy # Ensure this ID matches the reference in the environment URL
         uses: actions/deploy-pages@v1
+
